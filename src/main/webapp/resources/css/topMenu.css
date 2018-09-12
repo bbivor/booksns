@@ -1,0 +1,9 @@
+@charset "UTF-8";
+
+.profileImg {
+    width: 30px; 
+    height: 30px;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 50%;
+ }

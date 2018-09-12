@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.book.sns.dao.SnsDmMapper">
+   <!--followingList가져오기  -->
+   <select id="selectFollowingId" parameterType="snsUser" resultType="relationship">
+   SELECT
+      FOLLOWID
+   FROM
+      RELATIONSHIP
+   WHERE
+      LOGINID=#{userId}
+   </select>
+
+   <!--이미 있는 채팅방인지 확인 -->
+   <select id="dmCheck" parameterType="relationship" resultType="dmList">
+   SELECT
+    dmNum
+   FROM
+      DM_LIST
+   WHERE
+      (fromId=#{loginId} AND toId=#{followId}) OR (toId=#{loginId} AND fromId=#{followId})
+   </select>
+   
+   <!-- DM방 생성  -->
+   <insert id="dmRoomCreate" parameterType="relationship">
+   INSERT INTO DM_LIST
+   (
+      DMNUM,
+      FROMID,
+      TOID
+   )
+   VALUES
+   (
+      dmNum_seq.nextVal,
+      #{loginId},
+      #{followId}
+   )
+   </insert>
+   
+   <!--DM보내기  -->
+   <insert id="dmSubmit" parameterType="dmContent">
+   INSERT INTO DM_CONTENT
+   (
+      dmContentId,
+       dmNum,
+       dmUserId,
+       dmContent,
+       dmRegdate
+   )
+   VALUES
+   (
+      dmContentId_seq.nextVal,
+      #{dmNum},
+      #{dmUserId},
+      #{dmContent},
+      SYSDATE
+   )
+   </insert>
+   
+   <!--DM내용가져오기  -->
+   <select id="selectDm" parameterType="map" resultType="dmContent">
+   SELECT
+   *
+   FROM
+      DM_CONTENT
+   WHERE
+      (DMUSERID=#{followId} OR DMUSERID=#{dmUserId}) AND (DMUSERID=#{dmUserId} OR DMUSERID=#{followId}) 
+   AND
+      DMNUM = #{dmNum}
+   ORDER BY
+       DMREGDATE ASC
+   </select>
+   
+   <!--DM방 가져오기 (최근 내용 1줄) -->
+   <select id="getDmRecentById" parameterType="dmContentList" resultType="dmContentList">
+   select
+    c3.dmnum as dmnum, c4.toid AS TOID, c3.dmcontent as dmcontent,  to_char(c3.dmregdate,'YY/MM/DD HH12:MI') AS dmregdate
+    
+   from
+      (select c2.dmnum,c2.dmuserid ,c2.dmcontent,c2.dmregdate
+      from 
+      (select max(dmcontentid) as dmcontentid, dmnum from dm_content group by dmnum) c1, dm_content c2 
+      where c1.dmcontentid = c2.dmcontentid) c3, dm_list c4
+   
+   where
+   c3.dmnum = c4.dmnum
+   
+   </select>
+   
+</mapper>
